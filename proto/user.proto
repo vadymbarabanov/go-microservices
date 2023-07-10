@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/vadymbarabanov/go-microservices/proto";
+option go_package = "github.com/vadymbarabanov/go-microservices/proto/user";
 
 message CreateUserRequest {
     string email = 1;
