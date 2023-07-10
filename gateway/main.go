@@ -2,25 +2,41 @@ package main
 
 import (
 	"context"
-	"net"
+	"encoding/json"
+	"fmt"
+	"net/http"
 
-	"github.com/vadymbarabanov/go-microservices/proto/user"
+	user "github.com/vadymbarabanov/go-microservices/proto/user"
 	"google.golang.org/grpc"
+	"google.golang.org/grpc/credentials/insecure"
 )
 
-type UserService struct {
-}
-
-func (UserService) Create(context.Context, *user.CreateUserRequest) (*user.CreateUserResponse, error) {
-
-}
-
 func main() {
-	lis, err := net.Listen("tcp", ":3000")
+	conn, err := grpc.Dial(":4000", grpc.WithTransportCredentials(insecure.NewCredentials()))
 	if err != nil {
 		panic(err)
 	}
+	defer conn.Close()
 
-	grpcServer := grpc.NewServer()
+	userClient := user.NewUserClient(conn)
 
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		response, err := userClient.Create(
+			context.Background(),
+			&user.CreateUserRequest{
+				Email:    "hello@world",
+				Password: "BLABLA",
+			},
+		)
+
+		if err != nil {
+			fmt.Fprint(w, err.Error())
+			return
+		}
+
+		w.Header().Set("content-type", "application/json")
+		json.NewEncoder(w).Encode(*response)
+	})
+
+	http.ListenAndServe(":3000", nil)
 }
